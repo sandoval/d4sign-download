@@ -1,0 +1,29 @@
+{
+  "name": "d4sign-download",
+  "version": "1.0.0",
+  "description": "Simple tool to download contracts from D4Sign",
+  "scripts": {
+    "start": "npm run build && node build/index.js",
+    "build": "rimraf ./build && tsc"
+  },
+  "author": "Daniel Sandoval",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sandoval/d4sign-download.git"
+  },
+  "dependencies": {
+    "dotenv": "^10.0.0",
+    "download": "^8.0.0",
+    "html-entities": "^2.3.2",
+    "queue": "^6.0.2",
+    "request": "^2.88.2"
+  },
+  "devDependencies": {
+    "@types/download": "^8.0.1",
+    "@types/node": "^16.11.6",
+    "@types/request": "^2.48.7",
+    "rimraf": "^3.0.2",
+    "typescript": "^4.4.4"
+  }
+}
