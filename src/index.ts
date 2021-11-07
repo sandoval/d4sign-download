@@ -84,18 +84,22 @@ const decodeHtmlEntities = (str: string): string =>
     return decode(str);
 }
 
-const downloadDocument = async (doc: D4Document, link: D4DocumentLink): Promise<DownloadResult> =>
+const getLinkAndDownload = async (doc: D4Document): Promise<DownloadResult> =>
 {
     const path = dest + decodeHtmlEntities(doc.safeName);
-    const filename = doc.uuidDoc + "-" + decodeHtmlEntities(link.name) + ".pdf";
-    if (!fs.existsSync(path)) {
+    if (doc.wasCanceled()) {
+        return new DownloadResult(doc.uuidDoc, decodeHtmlEntities(doc.nameDoc), true, 'canceled');
+    } else if (!fs.existsSync(path)) {
         fs.mkdirSync(path, { recursive: true });
     } else {
         const files = fs.readdirSync(path);
-        if (files.find((file) => file.startsWith(doc.uuidDoc))) {
+        const filename = files.find((file) => file.startsWith(doc.uuidDoc));
+        if (filename != undefined) {
             return new DownloadResult(doc.uuidDoc, path + "/" + filename, true, 'alreadyDownloaded');
         }
     }
+    const link = await getDocumentLink(doc.uuidDoc);
+    const filename = doc.uuidDoc + "-" + decodeHtmlEntities(link.name) + ".pdf";
     if (link.url != '') {
         try {
             await download(link.url, path, { filename: filename });
@@ -107,19 +111,6 @@ const downloadDocument = async (doc: D4Document, link: D4DocumentLink): Promise<
         return new DownloadResult(doc.uuidDoc, path + "/" + filename, false, 'rateLimited');
     } else {
         return new DownloadResult(doc.uuidDoc, path + "/" + filename, false, 'notFound');
-    }
-}
-
-const getLinkAndDownload = async (doc: D4Document): Promise<DownloadResult> =>
-{
-    try {
-        if (doc.wasCanceled()) {
-            return new DownloadResult(doc.uuidDoc, decodeHtmlEntities(doc.nameDoc), true, 'canceled');
-        }
-        const link = await getDocumentLink(doc.uuidDoc);
-        return downloadDocument(doc, link);
-    } catch {
-        return new DownloadResult(doc.uuidDoc, "", false, "failed");
     }
 }
 
@@ -178,6 +169,7 @@ const main = async () =>
 
     totalCount = q.length;
     timeoutCount = 0;
+    q.results = [];
 
     q.on('timeout', (next, job) => {
         console.log("Job timed out: " + job.toString());
@@ -189,7 +181,6 @@ const main = async () =>
         clearInterval(watchdog);
         watchdog.unref();
 
-        watchdog.unref();
         if (err) {
             console.error(err);
         } else {
